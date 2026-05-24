@@ -16,6 +16,8 @@ export default function Settings() {
     themeId,
     setTheme,
     themeOptions,
+    dailyGoal,
+    setDailyGoal,
   } = useJournal();
   const { showNotification } = useNotification();
   const fileRef = useRef(null);
@@ -115,6 +117,37 @@ export default function Settings() {
                 Save Changes
               </Button>
             </form>
+          </section>
+
+          {/* Appearance Section */}
+          <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
+            <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
+              Writing Goals
+            </h2>
+            <p className="text-sm text-[#8A867D] mb-6 leading-relaxed">
+              Set a daily word count goal to stay motivated.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 w-full">
+                <label className="text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-2 block">
+                  Daily Word Goal
+                </label>
+                <input
+                  type="number"
+                  value={dailyGoal}
+                  onChange={(e) =>
+                    setDailyGoal(parseInt(e.target.value, 10) || 0)
+                  }
+                  className="w-full h-10 px-4 bg-white border border-[#1C1917]/10 focus:border-[#1A3626] outline-none font-sans text-[14px] transition-colors"
+                />
+              </div>
+              <Button
+                onClick={() => showNotification("Goal updated", "info")}
+                className="w-full sm:w-auto"
+              >
+                Update Goal
+              </Button>
+            </div>
           </section>
 
           {/* Appearance Section */}

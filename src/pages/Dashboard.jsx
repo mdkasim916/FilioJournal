@@ -17,10 +17,25 @@ const PROMPTS = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { profile, entries } = useJournal();
+  const { profile, entries, dailyGoal } = useJournal();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [page, setPage] = useState(1);
+
+  const wordsToday = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return entries
+      .filter((e) => e.createdAt.startsWith(today))
+      .reduce(
+        (acc, curr) => acc + (curr.body ? curr.body.split(/\s+/).length : 0),
+        0,
+      );
+  }, [entries]);
+
+  const goalProgress = Math.min(
+    100,
+    Math.round((wordsToday / dailyGoal) * 100),
+  );
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -245,6 +260,32 @@ export default function Dashboard() {
 
       {/* ── Right sidebar (Now stacked or shown on large screens) ── */}
       <aside className="w-full xl:w-[320px] shrink-0 xl:border-l border-[#1C1917] px-6 md:px-8 py-10 flex flex-col md:flex-row xl:flex-col gap-10 md:flex-wrap xl:flex-nowrap bg-[#F2EFE9]/30">
+        {/* Daily Goal */}
+        <div className="flex-1 min-w-[200px]">
+          <SectionLabel>Today's Word Goal</SectionLabel>
+          <div className="flex items-end justify-between mb-2">
+            <span className="font-serif text-[32px] font-bold text-[#1A3626] leading-none">
+              {goalProgress}%
+            </span>
+            <span className="font-sans text-[12px] text-[#8A867D]">
+              {wordsToday} / {dailyGoal} words
+            </span>
+          </div>
+          <div className="w-full h-2 bg-[#E5E2DC] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#C29F60] transition-all duration-1000"
+              style={{ width: `${goalProgress}%` }}
+            />
+          </div>
+          <p className="font-sans text-[11px] text-[#8A867D] mt-3 uppercase tracking-[1px]">
+            {goalProgress >= 100
+              ? "Goal achieved!"
+              : `${dailyGoal - wordsToday} words to go`}
+          </p>
+        </div>
+
+        <hr className="hidden xl:block border-t border-[#1C1917]/10" />
+
         {/* Streak */}
         <div className="flex-1 min-w-[200px]">
           <SectionLabel>Writing streak</SectionLabel>

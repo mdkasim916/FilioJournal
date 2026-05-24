@@ -22,6 +22,7 @@ const storageKey = "journal-atlas.entries";
 const profileKey = "journal-atlas.profile";
 const themeKey = "journal-atlas.theme";
 const syncKey = "journal-atlas.sync-enabled";
+const goalKey = "journal-atlas.daily-goal";
 
 const defaultProfile = {
   name: "Alex Morgan",
@@ -132,6 +133,16 @@ function loadSyncEnabled() {
   }
 }
 
+function loadDailyGoal() {
+  if (typeof window === "undefined") return 500;
+  try {
+    const goal = window.localStorage.getItem(goalKey);
+    return goal ? parseInt(goal, 10) : 500;
+  } catch {
+    return 500;
+  }
+}
+
 function mergeEntries(localEntries, remoteEntries) {
   const merged = new Map();
 
@@ -184,6 +195,7 @@ export function JournalProvider({ children }) {
   const [profile, setProfile] = useState(loadProfile);
   const [themeId, setThemeId] = useState(loadThemeId);
   const [syncEnabled, setSyncEnabled] = useState(loadSyncEnabled);
+  const [dailyGoal, setDailyGoal] = useState(loadDailyGoal);
   const [authSession, setAuthSession] = useState(null);
   const [syncStatus, setSyncStatus] = useState(
     hasJournalSync() ? "signed-out" : "offline",
@@ -207,6 +219,10 @@ export function JournalProvider({ children }) {
   useEffect(() => {
     window.localStorage.setItem(syncKey, String(syncEnabled));
   }, [syncEnabled]);
+
+  useEffect(() => {
+    window.localStorage.setItem(goalKey, String(dailyGoal));
+  }, [dailyGoal]);
 
   useEffect(() => {
     if (!hasJournalSync() || !supabase) {
@@ -451,6 +467,8 @@ export function JournalProvider({ children }) {
     signUp,
     signInWithGoogle: signInWithGoogleProvider,
     logOut,
+    dailyGoal,
+    setDailyGoal,
     getEntryById: (entryId) => entriesById.get(entryId) ?? null,
   };
 
