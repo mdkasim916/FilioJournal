@@ -1,18 +1,15 @@
 // src/pages/Signup.jsx
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
+import { useJournal } from "../context/JournalStore";
 
 const STEPS = ["Account", "Your Name", "Writing Goal"];
 
 export default function Signup() {
-  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    email: "",
-    password: "",
     name: "",
     goal: "",
   });
@@ -48,14 +45,10 @@ export default function Signup() {
 
   const validate = () => {
     const e = {};
-    if (step === 0) {
-      if (!form.email) e.email = "Email is required";
-      if (!form.password || form.password.length < 8)
-        e.password = "Min 8 characters";
-    }
     if (step === 1 && !form.name) e.name = "Please tell us your name";
     return e;
   };
+  const { signInWithGoogle } = useJournal();
 
   const next = async () => {
     const e = validate();
@@ -67,13 +60,15 @@ export default function Signup() {
       setStep((s) => s + 1);
       return;
     }
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setLoading(false);
-    navigate("/dashboard");
+    // Final step - could do some profile update here if needed
+    // but the actual auth is handled by Google
+    setStep(0); // reset or redirect
   };
 
-  const handleGoogle = () => navigate("/dashboard");
+  const handleGoogle = () => {
+    setLoading(true);
+    signInWithGoogle().catch(() => setLoading(false));
+  };
 
   return (
     <div
@@ -119,7 +114,7 @@ export default function Signup() {
                   <p className="text-[12px] text-[#8A867D] mt-0.5">
                     {
                       [
-                        "Create your login credentials",
+                        "Connect your Google account",
                         "How shall we address you?",
                         "Set your writing intention",
                       ][i]
@@ -147,7 +142,7 @@ export default function Signup() {
             Step {step + 1} of {STEPS.length}
           </p>
 
-          {/* ── Step 0: Credentials ── */}
+          {/* ── Step 0: Connect ── */}
           {step === 0 && (
             <div className="flex flex-col gap-6">
               <p className="text-[11px] uppercase tracking-[3px] text-[#C29F60]">
@@ -160,38 +155,19 @@ export default function Signup() {
                 Start writing today
               </h1>
 
+              <p className="text-[15px] text-[#8A867D] leading-[1.6]">
+                Folio uses Google to keep your entries private, encrypted, and
+                accessible from any device.
+              </p>
+
               <button
                 onClick={handleGoogle}
-                className="w-full h-11 flex items-center justify-center gap-3 border border-[#1C1917] bg-transparent text-[#1C1917] text-[14px] hover:bg-[#F2EFE9] transition-colors cursor-pointer"
+                disabled={loading}
+                className="w-full h-12 flex items-center justify-center gap-3 border border-[#1C1917] bg-transparent text-[#1C1917] text-[14px] hover:bg-[#F2EFE9] transition-all duration-200 cursor-pointer mt-4"
               >
                 <GoogleIcon />
-                Sign up with Google
+                {loading ? "Connecting..." : "Sign up with Google"}
               </button>
-
-              <div className="flex items-center gap-4">
-                <div className="flex-1 border-t border-[#F2EFE9]" />
-                <span className="text-[12px] uppercase tracking-[1.5px] text-[#8A867D]">
-                  or
-                </span>
-                <div className="flex-1 border-t border-[#F2EFE9]" />
-              </div>
-
-              <Input
-                label="Email address"
-                type="email"
-                placeholder="you@example.com"
-                value={form.email}
-                onChange={set("email")}
-                error={errors.email}
-              />
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Min 8 characters"
-                value={form.password}
-                onChange={set("password")}
-                error={errors.password}
-              />
             </div>
           )}
 
@@ -211,15 +187,18 @@ export default function Signup() {
                 This appears on your journal entries. It can be your real name,
                 a pen name, or initials.
               </p>
-              <Input
+              <input
                 label="Your name"
                 type="text"
                 placeholder="e.g. Alex or A.M."
                 value={form.name}
                 onChange={set("name")}
-                error={errors.name}
+                className="w-full h-12 px-4 bg-[#F2EFE9] border border-transparent focus:border-[#1A3626] outline-none font-sans text-[15px] transition-colors"
                 autoFocus
               />
+              {errors.name && (
+                <p className="text-red-500 text-[12px]">{errors.name}</p>
+              )}
             </div>
           )}
 
@@ -270,22 +249,24 @@ export default function Signup() {
                 Back
               </Button>
             )}
-            <Button
-              size="lg"
-              className="flex-1"
-              onClick={next}
-              disabled={loading}
-            >
-              {loading
-                ? "Creating journal…"
-                : step === STEPS.length - 1
-                  ? "Enter Folio"
-                  : "Continue"}
-            </Button>
+            {step > 0 && (
+              <Button
+                size="lg"
+                className="flex-1"
+                onClick={next}
+                disabled={loading}
+              >
+                {loading
+                  ? "Creating journal…"
+                  : step === STEPS.length - 1
+                    ? "Enter Folio"
+                    : "Continue"}
+              </Button>
+            )}
           </div>
 
           {step === 0 && (
-            <p className="text-center text-[14px] text-[#8A867D] mt-6">
+            <p className="text-center text-[14px] text-[#8A867D] mt-8">
               Already have an account?{" "}
               <Link
                 to="/login"

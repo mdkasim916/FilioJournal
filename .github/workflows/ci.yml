@@ -1,30 +1,41 @@
-name: Journal Atlas CI
+name: Continuous Integration
 
 on:
   push:
+    branches: [main, master]
   pull_request:
+    branches: [main, master]
 
 jobs:
-  validate:
+  build-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: journal/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: journal
 
-      - name: Lint source
+      - name: Lint code
         run: npm run lint
+        working-directory: journal
 
       - name: Run tests
         run: npm run test:run
+        working-directory: journal
 
-      - name: Build production bundle
+      - name: Build application
         run: npm run build
+        working-directory: journal

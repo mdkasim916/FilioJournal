@@ -1,23 +1,22 @@
 import React from "react";
-
-const MOOD_COLORS = {
-  Reflective: "#C29F60",
-  Hopeful: "#1A3626",
-  Melancholic: "#6B5860",
-  Energised: "#2A7F62",
-  Grateful: "#C29F60",
-  Restless: "#8A5D5D",
-};
+import { MOODS } from "../../lib/constants";
 
 export default function MoodBadge({ mood }) {
-  const bg = MOOD_COLORS[mood] || "transparent";
-  const color = mood ? "var(--color-background)" : "var(--color-muted)";
+  const moodConfig = MOODS.find((m) => m.label === mood);
+
+  if (!moodConfig) {
+    return (
+      <span className="text-[10px] uppercase tracking-[1px] px-2 py-0.5 border border-[#F2EFE9] text-[#8A867D]">
+        {mood || "Unknown"}
+      </span>
+    );
+  }
+
   return (
     <span
-      className="text-[11px] uppercase tracking-[1px] px-3 py-1 font-semibold"
-      style={{ background: bg, color, borderRadius: 0 }}
+      className={`text-[10px] uppercase tracking-[1px] px-2 py-0.5 border transition-colors ${moodConfig.color} group-hover:bg-white/10 group-hover:text-white group-hover:border-white/20`}
     >
-      {mood}
+      {moodConfig.emoji} {mood}
     </span>
   );
 }
