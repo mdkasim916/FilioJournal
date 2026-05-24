@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useJournal } from "../context/JournalStore";
 
 export default function Login() {
@@ -11,9 +11,9 @@ export default function Login() {
     setLoading(true);
     try {
       await signInWithGoogle();
-    } catch (err) {
+    } catch (error) {
       setLoading(false);
-      console.error(err);
+      console.error(error);
     }
   };
 

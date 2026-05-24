@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { SectionLabel, MoodBadge, Button } from "../components/ui";
 import {
@@ -122,7 +122,7 @@ export default function Analytics() {
                   value: stats.tagCountsCount,
                   icon: <Hash size={20} />,
                 },
-              ].map((stat, i) => (
+              ].map((stat) => (
                 <div
                   key={stat.label}
                   className="p-6 border border-[#1C1917] bg-[#F2EFE9]/30"

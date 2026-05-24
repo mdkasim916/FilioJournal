@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useJournal } from "../context/JournalStore";
 import { useNotification } from "../context/NotificationContext";
 import Button from "../components/ui/Button";
@@ -25,11 +25,6 @@ export default function Settings() {
   const [name, setName] = useState(profile.name);
   const [bio, setBio] = useState(profile.bio);
 
-  useEffect(() => {
-    setName(profile.name);
-    setBio(profile.bio);
-  }, [profile]);
-
   function handleProfileUpdate(e) {
     e.preventDefault();
     updateProfile({ ...profile, name, bio });
@@ -47,7 +42,7 @@ export default function Settings() {
       a.click();
       URL.revokeObjectURL(url);
       showNotification("Journal exported successfully", "success");
-    } catch (err) {
+    } catch {
       showNotification("Failed to export journal", "error");
     }
   }
@@ -61,8 +56,8 @@ export default function Settings() {
         const count = importEntries(reader.result);
         setImportError("");
         showNotification(`${count} entries imported and merged`, "success");
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
         setImportError(msg);
         showNotification("Failed to import entries", "error");
       }

@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function SectionLabel({ children }) {
   return (
     <div className="mb-4">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   format,
   startOfMonth,
@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
-import { MoodBadge, Button } from "../components/ui";
+import { Button } from "../components/ui";
 import { useJournal } from "../context/JournalStore";
 
 export default function Calendar() {

@@ -1,41 +1,72 @@
-name: Continuous Integration
+name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, develop ]
 
 jobs:
-  build-and-test:
+  test:
+    name: Lint → Test → Build
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20.x]
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-          cache-dependency-path: journal/package-lock.json
+          node-version: '20'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm ci
-        working-directory: journal
 
-      - name: Lint code
+      - name: Lint
         run: npm run lint
-        working-directory: journal
 
       - name: Run tests
         run: npm run test:run
-        working-directory: journal
 
-      - name: Build application
+      - name: Build
         run: npm run build
-        working-directory: journal
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: test
+    runs-on: ubuntu-latest
+    # Only deploy on main branch pushes after tests pass
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_PAGES_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: ${{ secrets.CF_PROJECT_NAME }}
+          directory: ./dist
+
+# Secrets required in repository settings:
+# - CF_PAGES_API_TOKEN: API Token with Pages Deploy permissions
+# - CF_ACCOUNT_ID: Your Cloudflare Account ID
+# - CF_PROJECT_NAME: The Pages project name

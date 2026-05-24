@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import {
   buildInsights,
   seedEntries,
@@ -197,12 +197,12 @@ export function JournalProvider({ children }) {
   const [syncEnabled, setSyncEnabled] = useState(loadSyncEnabled);
   const [dailyGoal, setDailyGoal] = useState(loadDailyGoal);
   const [authSession, setAuthSession] = useState(null);
-  const [syncStatus, setSyncStatus] = useState(
-    hasJournalSync() ? "signed-out" : "offline",
-  );
+  const [syncStatus, setSyncStatus] = useState("offline");
   const [syncError, setSyncError] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(
+    hasJournalSync() && supabase ? true : false,
+  );
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(entries));
@@ -226,8 +226,6 @@ export function JournalProvider({ children }) {
 
   useEffect(() => {
     if (!hasJournalSync() || !supabase) {
-      setSyncStatus("offline");
-      setIsAuthLoading(false);
       return undefined;
     }
 
@@ -253,8 +251,8 @@ export function JournalProvider({ children }) {
       setIsAuthLoading(false);
 
       // Auto-enable sync when signing in for the first time
-      if (session && !syncEnabled) {
-        setSyncEnabled(true);
+      if (session) {
+        setSyncEnabled((prev) => prev || true);
       }
     });
 
@@ -264,11 +262,39 @@ export function JournalProvider({ children }) {
     };
   }, []);
 
+  const syncNow = useCallback(async () => {
+    if (!authSession || !hasJournalSync() || !syncEnabled) {
+      return { ok: false, message: "Sign in to enable sync." };
+    }
+
+    try {
+      setIsSyncing(true);
+      setSyncError("");
+      const remoteEntries = await fetchRemoteEntries(authSession.user.id);
+      const mergedEntries = mergeEntries(entries, remoteEntries);
+      setEntries(mergedEntries);
+      await pushRemoteEntries(authSession.user.id, mergedEntries);
+      setSyncStatus("synced");
+      return { ok: true, message: "Entries synced." };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Sync failed.";
+      setSyncStatus("error");
+      setSyncError(message);
+      return { ok: false, message };
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [authSession, entries, syncEnabled]);
+
   useEffect(() => {
     if (authSession && syncEnabled && syncStatus === "signed-in") {
-      syncNow();
+      const timer = setTimeout(() => {
+        void syncNow();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [authSession, syncEnabled]);
+    return undefined;
+  }, [authSession, syncEnabled, syncStatus, syncNow]);
 
   const sortedEntries = useMemo(() => sortEntries(entries), [entries]);
   const stats = useMemo(() => statsFromEntries(sortedEntries), [sortedEntries]);
@@ -372,7 +398,7 @@ export function JournalProvider({ children }) {
       try {
         await pushRemoteEntries(authSession.user.id, nextEntries);
         setSyncStatus("synced");
-      } catch (error) {
+      } catch {
         setSyncStatus("error");
       }
     }
@@ -388,30 +414,6 @@ export function JournalProvider({ children }) {
 
   function exportEntries() {
     return toJson(entries);
-  }
-
-  async function syncNow() {
-    if (!authSession || !hasJournalSync() || !syncEnabled) {
-      return { ok: false, message: "Sign in to enable sync." };
-    }
-
-    try {
-      setIsSyncing(true);
-      setSyncError("");
-      const remoteEntries = await fetchRemoteEntries(authSession.user.id);
-      const mergedEntries = mergeEntries(entries, remoteEntries);
-      setEntries(mergedEntries);
-      await pushRemoteEntries(authSession.user.id, mergedEntries);
-      setSyncStatus("synced");
-      return { ok: true, message: "Entries synced." };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Sync failed.";
-      setSyncStatus("error");
-      setSyncError(message);
-      return { ok: false, message };
-    } finally {
-      setIsSyncing(false);
-    }
   }
 
   async function signIn(email, password) {
