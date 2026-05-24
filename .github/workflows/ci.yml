@@ -38,35 +38,7 @@ jobs:
       - name: Build
         run: npm run build
 
-  deploy:
-    name: Deploy to Cloudflare Pages
-    needs: test
-    runs-on: ubuntu-latest
-    # Only deploy on main branch pushes after tests pass
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CF_PAGES_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          projectName: ${{ secrets.CF_PROJECT_NAME }}
-          directory: ./dist
-
-# Secrets required in repository settings:
-# - CF_PAGES_API_TOKEN: API Token with Pages Deploy permissions
-# - CF_ACCOUNT_ID: Your Cloudflare Account ID
-# - CF_PROJECT_NAME: The Pages project name
+# NOTE: Cloudflare Pages deployment has been removed from this workflow.
+# You've connected GitHub directly to Cloudflare Pages for auto-deploys from the
+# repository settings. If you later want CI-triggered deploys, re-add a
+# deploy job that uses `cloudflare/pages-action` and the required secrets.
