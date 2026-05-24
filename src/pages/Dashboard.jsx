@@ -49,7 +49,7 @@ export default function Dashboard() {
   const visibleRecent = recent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-full">
       {/* ── Main feed ── */}
       <div className="flex-1 px-12 py-10 min-w-0">
         {/* Header */}

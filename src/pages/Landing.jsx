@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "../components/ui";
+import { useJournal } from "../context/JournalStore";
 
 const FEATURES = [
   {
@@ -55,6 +56,8 @@ const TESTIMONIALS = [
 ];
 
 export default function Landing() {
+  const { authSession } = useJournal();
+
   useEffect(() => {
     const link = document.createElement("link");
     link.href =
@@ -89,14 +92,22 @@ export default function Landing() {
           >
             Stories
           </a>
-          <Link to="/login">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-          <Link to="/journal/new">
-            <Button size="sm">Start Writing</Button>
-          </Link>
+          {authSession ? (
+            <Link to="/dashboard">
+              <Button size="sm">Go to Dashboard</Button>
+            </Link>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">Start Writing</Button>
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
