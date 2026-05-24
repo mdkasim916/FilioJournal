@@ -3,9 +3,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { useJournal } from "../context/JournalStore";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { signIn, signInWithGoogle } = useJournal();
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -25,15 +27,28 @@ export default function Login() {
       return;
     }
     setLoading(true);
-    // TODO: replace with real auth call
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    navigate("/dashboard");
+    try {
+      const res = await signIn(form.email, form.password);
+      if (res.error) {
+        setErrors({ form: res.error.message || "Sign in failed" });
+        setLoading(false);
+        return;
+      }
+      navigate("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      setErrors({ form: err instanceof Error ? err.message : String(err) });
+    }
   };
 
-  const handleGoogle = () => {
-    // TODO: trigger Google OAuth flow
-    navigate("/dashboard");
+  const handleGoogle = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+    }
   };
 
   const set = (field) => (ev) => {
@@ -103,10 +118,11 @@ export default function Login() {
           {/* Google OAuth */}
           <button
             onClick={handleGoogle}
+            disabled={loading}
             className="w-full h-11 flex items-center justify-center gap-3 border border-[#1C1917] bg-transparent text-[#1C1917] font-sans text-[14px] hover:bg-[#F2EFE9] transition-colors cursor-pointer mb-6"
           >
             <GoogleIcon />
-            Continue with Google
+            {loading ? "Connecting..." : "Continue with Google"}
           </button>
 
           <div className="flex items-center gap-4 mb-6">
@@ -119,6 +135,9 @@ export default function Login() {
 
           {/* Email form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {errors.form && (
+              <p className="text-red-500 text-[13px]">{errors.form}</p>
+            )}
             <Input
               label="Email address"
               type="email"
@@ -136,7 +155,10 @@ export default function Login() {
               error={errors.password}
             />
             <div className="flex justify-end">
-              <button className="font-sans text-[13px] text-[#8A867D] hover:text-[#1C1917] bg-transparent border-none cursor-pointer">
+              <button
+                type="button"
+                className="font-sans text-[13px] text-[#8A867D] hover:text-[#1C1917] bg-transparent border-none cursor-pointer"
+              >
                 Forgot password?
               </button>
             </div>

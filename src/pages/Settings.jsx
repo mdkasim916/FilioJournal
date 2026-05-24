@@ -43,7 +43,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen px-12 py-12 bg-[#FBF9F6]">
+    <div className="min-h-full px-12 py-12">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-serif font-bold mb-4">Settings & Data</h1>
 

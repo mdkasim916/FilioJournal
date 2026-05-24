@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { useJournal } from "../context/JournalStore";
 
 const STEPS = ["Account", "Your Name", "Writing Goal"];
 
@@ -56,6 +57,7 @@ export default function Signup() {
     if (step === 1 && !form.name) e.name = "Please tell us your name";
     return e;
   };
+  const { signUp, signInWithGoogle: signInWithGoogleProvider } = useJournal();
 
   const next = async () => {
     const e = validate();
@@ -68,12 +70,24 @@ export default function Signup() {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setLoading(false);
-    navigate("/dashboard");
+    try {
+      const res = await signUp(form.email, form.password);
+      setLoading(false);
+      if (res.error) {
+        setErrors({ form: res.error.message || "Sign up failed" });
+        return;
+      }
+      navigate("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      setErrors({ form: err instanceof Error ? err.message : String(err) });
+    }
   };
 
-  const handleGoogle = () => navigate("/dashboard");
+  const handleGoogle = () => {
+    setLoading(true);
+    signInWithGoogleProvider().catch(() => setLoading(false));
+  };
 
   return (
     <div

@@ -1,9 +1,11 @@
 // src/pages/CreateJournal.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useJournal } from "../context/JournalStore";
 import { MOODS, SUGGESTED_TAGS, countWords } from "../lib/constants";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import { Tag } from "../components/ui";
 
 const TOOLBAR_ACTIONS = [
   { label: "B", cmd: "bold", title: "Bold" },
@@ -15,6 +17,7 @@ const TOOLBAR_ACTIONS = [
 
 export default function CreateJournal() {
   const navigate = useNavigate();
+  const { createEntry } = useJournal();
   const titleRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -106,15 +109,22 @@ export default function CreateJournal() {
       titleRef.current?.focus();
       return;
     }
+
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 700));
+
+    await createEntry({
+      title,
+      body: editorRef.current?.innerText || "",
+      mood,
+      tags,
+    });
+
     setSaving(false);
-    // In real app: save to DB, get new ID, navigate to /journal/:newId
-    navigate("/journal/1");
+    navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-[#FBF9F6] relative">
+    <div className="min-h-full relative">
       {/* ── Floating toolbar ── */}
       {toolbar.visible && (
         <div
@@ -142,16 +152,10 @@ export default function CreateJournal() {
         className={`flex justify-between items-center px-10 py-5 border-b border-[#F2EFE9] transition-opacity duration-300 bg-[#FBF9F6] sticky top-0 z-40 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="font-sans text-[14px] text-[#8A867D] hover:text-[#1C1917] transition-colors bg-transparent border-none cursor-pointer"
-          >
-            ← Back
-          </button>
           <span
             className={`font-sans text-[12px] transition-all ${saved ? "text-[#C29F60]" : "text-transparent"}`}
           >
-            Saved
+            Saved to Cloud
           </span>
         </div>
         <div className="flex items-center gap-6">
