@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useJournal } from "../context/JournalStore";
 import { useNotification } from "../context/NotificationContext";
@@ -38,7 +38,7 @@ export default function ViewJournal() {
       await deleteEntry(id);
       showNotification("Entry deleted successfully", "success");
       navigate("/dashboard");
-    } catch (err) {
+    } catch {
       showNotification("Failed to delete entry", "error");
     }
   };

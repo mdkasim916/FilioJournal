@@ -1,4 +1,3 @@
-import React from "react";
 import { MOODS } from "../../lib/constants";
 
 export default function MoodBadge({ mood }) {

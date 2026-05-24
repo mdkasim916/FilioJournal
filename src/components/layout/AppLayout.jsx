@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useJournal } from "../../context/JournalStore";
 
 export default function AppLayout() {
-  const { authSession, hasJournalSync, isAuthLoading, theme } = useJournal();
+  const { theme } = useJournal();
 
   useEffect(() => {
     if (!theme) return;

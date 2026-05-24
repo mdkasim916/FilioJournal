@@ -25,35 +25,28 @@ export default function JournalEditor() {
   const editorRef = useRef(null);
   const saveTimerRef = useRef(null);
 
-  const [title, setTitle] = useState("");
-  const [mood, setMood] = useState("");
-  const [tags, setTags] = useState([]);
+  const editingEntry = id ? getEntryById(id) : null;
+
+  const [title, setTitle] = useState(editingEntry?.title || "");
+  const [mood, setMood] = useState(editingEntry?.mood || "");
+  const [tags, setTags] = useState(editingEntry?.tags || []);
   const [tagInput, setTagInput] = useState("");
-  const [wordCount, setWordCount] = useState(0);
+  const [wordCount, setWordCount] = useState(
+    editingEntry ? countWords(editingEntry.body) : 0,
+  );
   const [navVisible, setNavVisible] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [toolbar, setToolbar] = useState({ visible: false, x: 0, y: 0 });
-  const [isEditMode, setIsEditMode] = useState(false);
+  const isEditMode = Boolean(editingEntry);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Load entry if editing
   useEffect(() => {
-    if (id) {
-      const entry = getEntryById(id);
-      if (entry) {
-        setTitle(entry.title);
-        setMood(entry.mood);
-        setTags(entry.tags || []);
-        setIsEditMode(true);
-        if (editorRef.current) {
-          editorRef.current.innerText = entry.body;
-          setWordCount(countWords(entry.body));
-        }
-      }
+    if (editingEntry && editorRef.current) {
+      editorRef.current.innerText = editingEntry.body;
     }
-  }, [id, getEntryById]);
+  }, [editingEntry]);
 
   // Debounced Auto-save
   const autoSave = useCallback(() => {
@@ -148,7 +141,7 @@ export default function JournalEditor() {
         x: rect.left + rect.width / 2,
         y: rect.top - 50 + window.scrollY,
       });
-    } catch (e) {
+    } catch {
       setToolbar((t) => ({ ...t, visible: false }));
     }
   };
@@ -211,7 +204,7 @@ export default function JournalEditor() {
       }
       setHasChanges(false);
       navigate(`/journal/${id}`);
-    } catch (err) {
+    } catch {
       showNotification("Failed to save entry", "error");
     } finally {
       setSaving(false);
@@ -224,7 +217,7 @@ export default function JournalEditor() {
       showNotification("Entry deleted", "success");
       setHasChanges(false);
       navigate("/dashboard");
-    } catch (err) {
+    } catch {
       showNotification("Failed to delete entry", "error");
     }
   };

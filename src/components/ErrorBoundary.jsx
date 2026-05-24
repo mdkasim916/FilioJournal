@@ -40,7 +40,7 @@ class ErrorBoundary extends React.Component {
                 Return to Landing Page
               </button>
             </div>
-            {process.env.NODE_ENV === "development" && (
+            {import.meta.env.DEV && (
               <pre className="mt-10 p-4 bg-red-50 text-red-700 text-left overflow-auto text-xs border border-red-100">
                 {this.state.error?.toString()}
               </pre>
