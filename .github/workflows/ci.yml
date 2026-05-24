@@ -2,29 +2,29 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - develop
+      - main
+
   pull_request:
-    branches: [ main, develop ]
+    branches:
+      - develop
+      - main
 
 jobs:
   test:
     name: Lint → Test → Build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Use Node.js
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -37,8 +37,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-# NOTE: Cloudflare Pages deployment has been removed from this workflow.
-# You've connected GitHub directly to Cloudflare Pages for auto-deploys from the
-# repository settings. If you later want CI-triggered deploys, re-add a
-# deploy job that uses `cloudflare/pages-action` and the required secrets.
