@@ -1,45 +1,11 @@
 // src/pages/Login.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import { useJournal } from "../context/JournalStore";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { signIn, signInWithGoogle } = useJournal();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
+  const { signInWithGoogle } = useJournal();
   const [loading, setLoading] = useState(false);
-
-  const validate = () => {
-    const e = {};
-    if (!form.email) e.email = "Email is required";
-    if (!form.password) e.password = "Password is required";
-    return e;
-  };
-
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
-    const e = validate();
-    if (Object.keys(e).length) {
-      setErrors(e);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await signIn(form.email, form.password);
-      if (res.error) {
-        setErrors({ form: res.error.message || "Sign in failed" });
-        setLoading(false);
-        return;
-      }
-      navigate("/dashboard");
-    } catch (err) {
-      setLoading(false);
-      setErrors({ form: err instanceof Error ? err.message : String(err) });
-    }
-  };
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -49,11 +15,6 @@ export default function Login() {
       setLoading(false);
       console.error(err);
     }
-  };
-
-  const set = (field) => (ev) => {
-    setForm((f) => ({ ...f, [field]: ev.target.value }));
-    setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
   return (
@@ -90,7 +51,7 @@ export default function Login() {
         </p>
       </div>
 
-      {/* ── Right: form ── */}
+      {/* ── Right: content ── */}
       <div className="flex-1 flex flex-col justify-center px-12 lg:px-24">
         <div className="max-w-sm w-full mx-auto">
           {/* Mobile logo */}
@@ -115,65 +76,28 @@ export default function Login() {
             Sign in to your journal
           </h1>
 
+          <p className="text-[15px] text-[#8A867D] leading-[1.6] mb-8">
+            We use Google to keep your journal secure and synced across all your
+            devices.
+          </p>
+
           {/* Google OAuth */}
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-3 border border-[#1C1917] bg-transparent text-[#1C1917] font-sans text-[14px] hover:bg-[#F2EFE9] transition-colors cursor-pointer mb-6"
+            className="w-full h-12 flex items-center justify-center gap-3 border border-[#1C1917] bg-transparent text-[#1C1917] font-sans text-[14px] hover:bg-[#F2EFE9] transition-all duration-200 cursor-pointer mb-6"
           >
             <GoogleIcon />
             {loading ? "Connecting..." : "Continue with Google"}
           </button>
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 border-t border-[#F2EFE9]" />
-            <span className="text-[12px] uppercase tracking-[1.5px] text-[#8A867D]">
-              or
-            </span>
-            <div className="flex-1 border-t border-[#F2EFE9]" />
-          </div>
-
-          {/* Email form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {errors.form && (
-              <p className="text-red-500 text-[13px]">{errors.form}</p>
-            )}
-            <Input
-              label="Email address"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={set("email")}
-              error={errors.email}
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={set("password")}
-              error={errors.password}
-            />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="font-sans text-[13px] text-[#8A867D] hover:text-[#1C1917] bg-transparent border-none cursor-pointer"
-              >
-                Forgot password?
-              </button>
-            </div>
-            <Button size="lg" className="w-full mt-2" disabled={loading}>
-              {loading ? "Signing in…" : "Sign In"}
-            </Button>
-          </form>
-
           <p className="text-center text-[14px] text-[#8A867D] mt-8">
-            Don't have an account?{" "}
+            New to Folio?{" "}
             <Link
               to="/signup"
               className="text-[#1A3626] font-medium hover:underline"
             >
-              Create one free
+              Create an account
             </Link>
           </p>
         </div>

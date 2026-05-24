@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import CreateJournal from "./pages/CreateJournal";
 import Landing from "./pages/Landing";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
+import Analytics from "./pages/Analytics";
 import AppLayout from "./components/layout/AppLayout";
 
 function NotFound() {
@@ -73,24 +75,9 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/journal/new" element={<CreateJournal />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
-            {/* Add other authenticated routes here as needed */}
-            <Route
-              path="/calendar"
-              element={
-                <div className="p-12">
-                  <h1>Calendar Coming Soon</h1>
-                </div>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <div className="p-12">
-                  <h1>Analytics Coming Soon</h1>
-                </div>
-              }
-            />
           </Route>
 
           {/* Fallback */}

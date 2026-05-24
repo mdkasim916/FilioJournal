@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useJournal } from "../context/JournalStore";
 import { MOODS, SUGGESTED_TAGS, countWords } from "../lib/constants";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import { Tag } from "../components/ui";
 
 const TOOLBAR_ACTIONS = [
@@ -124,11 +123,11 @@ export default function CreateJournal() {
   };
 
   return (
-    <div className="min-h-full relative">
+    <div className="relative bg-[#FBF9F6]">
       {/* ── Floating toolbar ── */}
       {toolbar.visible && (
         <div
-          className="fixed z-50 flex gap-1 bg-[#1C1917] px-2 py-1.5 -translate-x-1/2"
+          className="fixed z-50 flex gap-1 bg-[#1C1917] px-2 py-1.5 -translate-x-1/2 rounded shadow-xl"
           style={{ left: toolbar.x, top: toolbar.y }}
         >
           {TOOLBAR_ACTIONS.map((a) => (
@@ -149,27 +148,38 @@ export default function CreateJournal() {
 
       {/* ── Nav ── */}
       <nav
-        className={`flex justify-between items-center px-10 py-5 border-b border-[#F2EFE9] transition-opacity duration-300 bg-[#FBF9F6] sticky top-0 z-40 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`flex justify-between items-center px-4 md:px-10 py-5 border-b border-[#F2EFE9] transition-opacity duration-300 bg-[#FBF9F6] sticky top-0 lg:top-0 z-40 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="lg:hidden font-sans text-[14px] text-[#8A867D] hover:text-[#1C1917] transition-colors bg-transparent border-none cursor-pointer"
+          >
+            ←
+          </button>
           <span
             className={`font-sans text-[12px] transition-all ${saved ? "text-[#C29F60]" : "text-transparent"}`}
           >
             Saved to Cloud
           </span>
         </div>
-        <div className="flex items-center gap-6">
-          <span className="font-sans text-[13px] text-[#8A867D]">
+        <div className="flex items-center gap-4 md:gap-6">
+          <span className="hidden sm:inline font-sans text-[13px] text-[#8A867D]">
             {wordCount} {wordCount === 1 ? "word" : "words"}
           </span>
-          <Button onClick={publish} disabled={saving} size="md">
-            {saving ? "Publishing…" : "Publish to Archive"}
+          <Button
+            onClick={publish}
+            disabled={saving}
+            size="md"
+            className="text-[13px] md:text-[14px] px-4"
+          >
+            {saving ? "Publishing…" : "Publish"}
           </Button>
         </div>
       </nav>
 
       {/* ── Writing canvas ── */}
-      <div className="max-w-[720px] mx-auto px-6 py-16">
+      <div className="max-w-[720px] mx-auto px-6 py-10 md:py-16">
         {/* Mood selector */}
         <div className="mb-8">
           <p className="font-sans text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-3">
@@ -203,7 +213,7 @@ export default function CreateJournal() {
           className="w-full bg-transparent border-none outline-none resize-none overflow-hidden text-[#1C1917] placeholder-[#C8C5BF] mb-2"
           style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: "52px",
+            fontSize: "clamp(32px, 8vw, 52px)",
             fontWeight: 700,
             lineHeight: 1.15,
           }}
@@ -214,7 +224,7 @@ export default function CreateJournal() {
         {/* Rich editor */}
         <style>{`
           [contenteditable]:empty:before { content: attr(data-placeholder); color: #C8C5BF; pointer-events: none; }
-          [contenteditable] h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; margin: 1.5em 0 0.5em; color: #1C1917; }
+          [contenteditable] h2 { font-family: 'Playfair Display', serif; font-size: 1.5em; font-weight: 700; margin: 1.5em 0 0.5em; color: #1C1917; }
           [contenteditable] blockquote { border-left: 3px solid #C29F60; padding-left: 20px; margin: 1.5em 0; color: #8A867D; font-style: italic; }
           [contenteditable] hr { border: none; border-top: 1px solid #1C1917; margin: 2em 0; }
           [contenteditable] p { margin-bottom: 1em; }
@@ -231,13 +241,13 @@ export default function CreateJournal() {
           className="min-h-[400px] text-[#1C1917]"
           style={{
             fontFamily: "'Outfit', sans-serif",
-            fontSize: "18px",
+            fontSize: "clamp(16px, 4vw, 18px)",
             lineHeight: 1.85,
           }}
         />
 
         {/* Tags */}
-        <div className="mt-10 pt-8 border-t border-[#F2EFE9]">
+        <div className="mt-10 pt-8 border-t border-[#F2EFE9] mb-20">
           <p className="font-sans text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-3">
             Tags
           </p>

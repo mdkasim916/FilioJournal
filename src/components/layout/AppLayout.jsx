@@ -8,26 +8,24 @@ export default function AppLayout() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FBF9F6]">
-        <div className="text-[#1A3626] animate-pulse font-serif italic text-xl">
+        <div className="text-[#1A3626] animate-pulse font-serif italic text-xl text-center px-6">
           Opening your journal...
         </div>
       </div>
     );
   }
 
-  // If we have supabase configured but no session, redirect to login
-  // This is a simple protection mechanism
   if (!authSession && hasJournalSync()) {
     return <Navigate to="/login" replace />;
   }
 
   return (
     <div
-      className="flex min-h-screen bg-[#FBF9F6]"
+      className="flex flex-col lg:flex-row h-screen bg-[#FBF9F6] overflow-hidden"
       style={{ fontFamily: "'Outfit', sans-serif" }}
     >
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto no-scrollbar relative">
         <Outlet />
       </main>
     </div>

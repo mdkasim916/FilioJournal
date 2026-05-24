@@ -49,11 +49,11 @@ export default function Dashboard() {
   const visibleRecent = recent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="flex min-h-full">
+    <div className="flex flex-col xl:flex-row">
       {/* ── Main feed ── */}
-      <div className="flex-1 px-12 py-10 min-w-0">
+      <div className="flex-1 px-6 md:px-12 py-10 min-w-0">
         {/* Header */}
-        <div className="flex justify-between items-start border-b border-[#1C1917] pb-8 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#1C1917] pb-8 mb-10">
           <div>
             <p className="font-sans text-[11px] uppercase tracking-[3px] text-[#8A867D] mb-1">
               {new Date().toLocaleDateString("en-GB", {
@@ -62,12 +62,14 @@ export default function Dashboard() {
                 month: "long",
               })}
             </p>
-            <h1 className="font-serif text-[40px] font-bold text-[#1C1917] leading-tight">
+            <h1 className="font-serif text-[32px] md:text-[40px] font-bold text-[#1C1917] leading-tight">
               Good morning, Alex.
             </h1>
           </div>
-          <Link to="/journal/new">
-            <Button size="lg">New Entry</Button>
+          <Link to="/journal/new" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full sm:w-auto">
+              New Entry
+            </Button>
           </Link>
         </div>
 
@@ -76,7 +78,7 @@ export default function Dashboard() {
           <p className="font-sans text-[11px] uppercase tracking-[2px] text-[#C29F60] mb-2">
             Today's prompt
           </p>
-          <p className="font-serif text-[22px] italic text-[#1C1917]">
+          <p className="font-serif text-[20px] md:text-[22px] italic text-[#1C1917]">
             "{promptOfDay}"
           </p>
           <button
@@ -88,8 +90,8 @@ export default function Dashboard() {
         </div>
 
         {/* Search + filter */}
-        <div className="flex gap-4 mb-6 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -98,12 +100,12 @@ export default function Dashboard() {
             />
             <SearchIcon />
           </div>
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
             {moods.map((m) => (
               <button
                 key={m}
                 onClick={() => setActiveFilter(m)}
-                className={`font-sans text-[11px] uppercase tracking-[1px] px-3 py-2 border transition-all cursor-pointer ${
+                className={`whitespace-nowrap font-sans text-[11px] uppercase tracking-[1px] px-3 py-2 border transition-all cursor-pointer ${
                   activeFilter === m
                     ? "bg-[#1A3626] text-[#FBF9F6] border-[#1A3626]"
                     : "bg-transparent text-[#8A867D] border-[#F2EFE9] hover:border-[#8A867D]"
@@ -119,9 +121,11 @@ export default function Dashboard() {
         {pinned.length > 0 && (
           <div className="mb-8">
             <SectionLabel>Pinned</SectionLabel>
-            {pinned.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
-            ))}
+            <div className="grid grid-cols-1 gap-4">
+              {pinned.map((entry) => (
+                <EntryCard key={entry.id} entry={entry} />
+              ))}
+            </div>
           </div>
         )}
 
@@ -135,13 +139,13 @@ export default function Dashboard() {
               </p>
             </div>
           ) : (
-            <>
+            <div className="flex flex-col gap-2">
               {visibleRecent.map((entry) => (
                 <EntryCard key={entry.id} entry={entry} />
               ))}
 
               {totalPages > 1 && (
-                <div className="flex items-center gap-3 mt-4">
+                <div className="flex items-center justify-between gap-3 mt-6 pb-10">
                   <Button
                     variant="outline"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -149,7 +153,7 @@ export default function Dashboard() {
                   >
                     Previous
                   </Button>
-                  <div className="text-sm text-[#8A867D]">
+                  <div className="text-sm text-[#8A867D] font-sans">
                     Page {page} of {totalPages}
                   </div>
                   <Button
@@ -161,15 +165,15 @@ export default function Dashboard() {
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ── Right sidebar ── */}
-      <aside className="w-[280px] shrink-0 border-l border-[#1C1917] px-8 py-10 flex flex-col gap-10">
+      {/* ── Right sidebar (Now stacked or shown on large screens) ── */}
+      <aside className="w-full xl:w-[320px] shrink-0 xl:border-l border-[#1C1917] px-6 md:px-8 py-10 flex flex-col md:flex-row xl:flex-col gap-10 md:flex-wrap xl:flex-nowrap bg-[#F2EFE9]/30">
         {/* Streak */}
-        <div>
+        <div className="flex-1 min-w-[200px]">
           <SectionLabel>Writing streak</SectionLabel>
           <div className="flex items-end gap-2">
             <span className="font-serif text-[56px] font-bold text-[#1A3626] leading-none">
@@ -179,7 +183,7 @@ export default function Dashboard() {
               days
             </span>
           </div>
-          <div className="flex gap-1 mt-3">
+          <div className="flex gap-1 mt-3 max-w-[200px]">
             {Array.from({ length: 7 }).map((_, i) => (
               <div
                 key={i}
@@ -192,10 +196,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <hr className="border-t border-[#F2EFE9]" />
+        <hr className="hidden xl:block border-t border-[#1C1917]/10" />
 
         {/* Mood this week */}
-        <div>
+        <div className="flex-1 min-w-[200px]">
           <SectionLabel>Moods this week</SectionLabel>
           <div className="flex flex-col gap-2">
             {[
@@ -213,10 +217,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <hr className="border-t border-[#F2EFE9]" />
+        <hr className="hidden xl:block border-t border-[#1C1917]/10" />
 
         {/* Tags cloud */}
-        <div>
+        <div className="flex-1 min-w-[200px]">
           <SectionLabel>Your tags</SectionLabel>
           <div className="flex flex-wrap gap-2">
             {[
@@ -233,10 +237,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <hr className="border-t border-[#F2EFE9]" />
+        <hr className="hidden xl:block border-t border-[#1C1917]/10" />
 
         {/* Quick links */}
-        <div>
+        <div className="flex-1 min-w-[200px]">
           <SectionLabel>Quick links</SectionLabel>
           <div className="flex flex-col gap-2">
             {[
@@ -262,14 +266,14 @@ export default function Dashboard() {
 function EntryCard({ entry }) {
   return (
     <Link to={`/journal/${entry.id}`} className="block">
-      <div className="group border border-[#F2EFE9] hover:border-[#1C1917] hover:bg-[#1A3626] p-6 mb-2 transition-all duration-200">
+      <div className="group border border-[#F2EFE9] hover:border-[#1C1917] hover:bg-[#1A3626] p-4 md:p-6 mb-1 transition-all duration-200">
         <div className="flex justify-between items-start mb-3">
           <p className="font-sans text-[11px] uppercase tracking-[1.5px] text-[#8A867D] group-hover:text-[#FBF9F6]/60">
             {formatDate(entry.date)}
           </p>
           <MoodBadge mood={entry.mood} />
         </div>
-        <h3 className="font-serif text-[22px] font-bold text-[#1C1917] group-hover:text-[#FBF9F6] mb-2 leading-snug">
+        <h3 className="font-serif text-[20px] md:text-[22px] font-bold text-[#1C1917] group-hover:text-[#FBF9F6] mb-2 leading-snug">
           {entry.title}
         </h3>
         <p className="font-sans text-[14px] text-[#8A867D] group-hover:text-[#FBF9F6]/70 leading-[1.6] line-clamp-2">
