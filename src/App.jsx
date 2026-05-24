@@ -1,13 +1,16 @@
-import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { JournalProvider, useJournal } from "./context/JournalStore";
+import { NotificationProvider } from "./context/NotificationContext";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import CreateJournal from "./pages/CreateJournal";
+import JournalEditor from "./pages/JournalEditor";
+import ViewJournal from "./pages/ViewJournal";
 import Landing from "./pages/Landing";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
+import Analytics from "./pages/Analytics";
 import AppLayout from "./components/layout/AppLayout";
 
 function NotFound() {
@@ -46,57 +49,46 @@ function PublicRoute({ children }) {
 export default function App() {
   return (
     <JournalProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Landing Page */}
-          <Route path="/" element={<Landing />} />
+      <NotificationProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Landing Page */}
+            <Route path="/" element={<Landing />} />
 
-          {/* Auth Pages (Protected from logged-in users) */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <Signup />
-              </PublicRoute>
-            }
-          />
-
-          {/* Authenticated Routes with Sidebar */}
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/journal/new" element={<CreateJournal />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* Add other authenticated routes here as needed */}
+            {/* Auth Pages (Protected from logged-in users) */}
             <Route
-              path="/calendar"
+              path="/login"
               element={
-                <div className="p-12">
-                  <h1>Calendar Coming Soon</h1>
-                </div>
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
               }
             />
             <Route
-              path="/analytics"
+              path="/signup"
               element={
-                <div className="p-12">
-                  <h1>Analytics Coming Soon</h1>
-                </div>
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
               }
             />
-          </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Authenticated Routes with Sidebar */}
+            <Route element={<AppLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/journal/new" element={<JournalEditor />} />
+              <Route path="/journal/:id" element={<ViewJournal />} />
+              <Route path="/journal/edit/:id" element={<JournalEditor />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </NotificationProvider>
     </JournalProvider>
   );
 }
