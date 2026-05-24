@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useJournal } from "../context/JournalStore";
+import { useNotification } from "../context/NotificationContext";
 import Button from "../components/ui/Button";
 
 export default function Settings() {
@@ -10,19 +11,43 @@ export default function Settings() {
     setSyncEnabled,
     syncStatus,
     logOut,
+    profile,
+    updateProfile,
+    themeId,
+    setTheme,
+    themeOptions,
   } = useJournal();
+  const { showNotification } = useNotification();
   const fileRef = useRef(null);
   const [importError, setImportError] = useState("");
+  const [name, setName] = useState(profile.name);
+  const [bio, setBio] = useState(profile.bio);
+
+  useEffect(() => {
+    setName(profile.name);
+    setBio(profile.bio);
+  }, [profile]);
+
+  function handleProfileUpdate(e) {
+    e.preventDefault();
+    updateProfile({ ...profile, name, bio });
+    showNotification("Profile updated successfully", "success");
+  }
 
   function handleExport() {
-    const json = exportEntries();
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `folio-journal-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const json = exportEntries();
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `folio-journal-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showNotification("Journal exported successfully", "success");
+    } catch (err) {
+      showNotification("Failed to export journal", "error");
+    }
   }
 
   function handleFile(ev) {
@@ -31,24 +56,107 @@ export default function Settings() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        importEntries(reader.result);
+        const count = importEntries(reader.result);
         setImportError("");
-        alert("Import successful — entries merged into your journal.");
+        showNotification(`${count} entries imported and merged`, "success");
       } catch (err) {
-        setImportError(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        setImportError(msg);
+        showNotification("Failed to import entries", "error");
       }
     };
     reader.readAsText(file);
   }
 
   return (
-    <div className="px-6 md:px-12 py-10 md:py-12 bg-[#FBF9F6]">
+    <div className="min-h-full px-6 md:px-12 py-10 md:py-12 bg-[#FBF9F6]">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-[32px] md:text-[40px] font-serif font-bold mb-8 text-[#1C1917]">
           Settings & Data
         </h1>
 
         <div className="grid grid-cols-1 gap-6">
+          {/* Profile Section */}
+          <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
+            <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
+              Profile
+            </h2>
+            <p className="text-sm text-[#8A867D] mb-6 leading-relaxed">
+              Customize how you appear in your journal.
+            </p>
+            <form onSubmit={handleProfileUpdate} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full">
+                  <label className="text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-2 block">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full h-10 px-4 bg-white border border-[#1C1917]/10 focus:border-[#1A3626] outline-none font-sans text-[14px] transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="w-full">
+                <label className="text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-2 block">
+                  Bio
+                </label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell your story..."
+                  rows={3}
+                  className="w-full p-4 bg-white border border-[#1C1917]/10 focus:border-[#1A3626] outline-none font-sans text-[14px] transition-colors resize-none"
+                />
+              </div>
+              <Button type="submit" className="w-full sm:w-auto">
+                Save Changes
+              </Button>
+            </form>
+          </section>
+
+          {/* Appearance Section */}
+          <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
+            <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
+              Appearance
+            </h2>
+            <p className="text-sm text-[#8A867D] mb-6 leading-relaxed">
+              Choose a theme that matches your writing style.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {themeOptions.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`p-4 border text-left transition-all duration-200 cursor-pointer ${
+                    themeId === t.id
+                      ? "border-[#1A3626] bg-[#1A3626] text-[#FBF9F6] shadow-md"
+                      : "border-[#1C1917]/10 bg-white text-[#1C1917] hover:border-[#1C1917]"
+                  }`}
+                >
+                  <p className="text-[14px] font-bold mb-1">{t.name}</p>
+                  <div className="flex gap-1">
+                    <div
+                      className="w-4 h-4 rounded-full border border-black/10"
+                      style={{
+                        backgroundColor: t.background.includes("linear")
+                          ? t.accent
+                          : t.background,
+                      }}
+                    />
+                    <div
+                      className="w-4 h-4 rounded-full border border-black/10"
+                      style={{ backgroundColor: t.accent }}
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Export / Import Section */}
           <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
             <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
               Export / Import
@@ -57,7 +165,7 @@ export default function Settings() {
               Export your journal as JSON or import a JSON export to merge
               entries.
             </p>
-            <div className="flex flex-col sm:row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button onClick={handleExport} className="w-full sm:w-auto">
                 Export JSON
               </Button>
@@ -83,6 +191,7 @@ export default function Settings() {
             )}
           </section>
 
+          {/* Cloud Sync Section */}
           <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
             <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
               Cloud Sync
@@ -120,6 +229,7 @@ export default function Settings() {
             </div>
           </section>
 
+          {/* Account Section */}
           <section className="p-6 md:p-8 border border-[#1C1917] bg-[#F2EFE9]/50">
             <h2 className="font-serif text-[20px] font-bold mb-3 text-[#1C1917]">
               Account
@@ -137,6 +247,7 @@ export default function Settings() {
             </Button>
           </section>
 
+          {/* Privacy Section */}
           <section className="p-6 md:p-8 border border-[#1C1917] bg-[#1A3626] text-[#FBF9F6]">
             <h2 className="font-serif text-[20px] font-bold mb-3">
               Data Privacy

@@ -1,24 +1,29 @@
-// src/pages/CreateJournal.jsx
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/JournalEditor.jsx
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useJournal } from "../context/JournalStore";
+import { useNotification } from "../context/NotificationContext";
 import { MOODS, SUGGESTED_TAGS, countWords } from "../lib/constants";
 import Button from "../components/ui/Button";
-import { Tag } from "../components/ui";
+import { Tag, Modal } from "../components/ui";
 
 const TOOLBAR_ACTIONS = [
   { label: "B", cmd: "bold", title: "Bold" },
   { label: "I", cmd: "italic", title: "Italic" },
   { label: "H2", cmd: "h2", title: "Heading" },
-  { label: "", cmd: "blockquote", title: "Quote" },
+  { label: "“", cmd: "blockquote", title: "Quote" },
   { label: "—", cmd: "hr", title: "Divider" },
 ];
 
-export default function CreateJournal() {
+export default function JournalEditor() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { createEntry } = useJournal();
+  const { createEntry, updateEntry, getEntryById, deleteEntry } = useJournal();
+  const { showNotification } = useNotification();
+
   const titleRef = useRef(null);
   const editorRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   const [title, setTitle] = useState("");
   const [mood, setMood] = useState("");
@@ -27,8 +32,68 @@ export default function CreateJournal() {
   const [wordCount, setWordCount] = useState(0);
   const [navVisible, setNavVisible] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
   const [toolbar, setToolbar] = useState({ visible: false, x: 0, y: 0 });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Load entry if editing
+  useEffect(() => {
+    if (id) {
+      const entry = getEntryById(id);
+      if (entry) {
+        setTitle(entry.title);
+        setMood(entry.mood);
+        setTags(entry.tags || []);
+        setIsEditMode(true);
+        if (editorRef.current) {
+          editorRef.current.innerText = entry.body;
+          setWordCount(countWords(entry.body));
+        }
+      }
+    }
+  }, [id, getEntryById]);
+
+  // Debounced Auto-save
+  const autoSave = useCallback(() => {
+    if (!id || !hasChanges) return;
+
+    setSaving(true);
+    const entryData = {
+      title,
+      body: editorRef.current?.innerText || "",
+      mood,
+      tags,
+    };
+
+    updateEntry(id, entryData);
+    setLastSaved(new Date());
+    setSaving(false);
+    setHasChanges(false);
+  }, [id, title, mood, tags, updateEntry, hasChanges]);
+
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (hasChanges && id) {
+      saveTimerRef.current = setTimeout(autoSave, 3000);
+    }
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [hasChanges, id, autoSave]);
+
+  // Prevent accidental navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
 
   // Auto-resize title
   useEffect(() => {
@@ -50,28 +115,42 @@ export default function CreateJournal() {
   const handleEditorInput = () => {
     const text = editorRef.current?.innerText || "";
     setWordCount(countWords(text));
-    setSaved(false);
-    // Auto-save after 1s idle
-    clearTimeout(window._saveTimer);
-    window._saveTimer = setTimeout(() => {
-      setSaved(true);
-    }, 1000);
+    setHasChanges(true);
+  };
+
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+    setHasChanges(true);
+  };
+
+  const handleMoodChange = (m) => {
+    setMood(mood === m ? "" : m);
+    setHasChanges(true);
+  };
+
+  const handleTagsChange = (newTags) => {
+    setTags(newTags);
+    setHasChanges(true);
   };
 
   // Floating toolbar on selection
   const handleSelect = () => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) {
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
       setToolbar((t) => ({ ...t, visible: false }));
       return;
     }
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    setToolbar({
-      visible: true,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 50 + window.scrollY,
-    });
+    try {
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      setToolbar({
+        visible: true,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 50 + window.scrollY,
+      });
+    } catch (e) {
+      setToolbar((t) => ({ ...t, visible: false }));
+    }
   };
 
   const execFormat = (cmd) => {
@@ -104,26 +183,54 @@ export default function CreateJournal() {
   };
 
   const publish = async () => {
-    if (!title.trim()) {
+    if (!title.trim() && !(editorRef.current?.innerText || "").trim()) {
+      showNotification("Please add a title or some content", "error");
       titleRef.current?.focus();
       return;
     }
 
     setSaving(true);
 
-    await createEntry({
-      title,
+    const entryData = {
+      title: title.trim() || "Untitled Entry",
       body: editorRef.current?.innerText || "",
       mood,
       tags,
-    });
+    };
 
-    setSaving(false);
-    navigate("/dashboard");
+    try {
+      if (isEditMode) {
+        await updateEntry(id, entryData);
+        showNotification("Entry updated successfully", "success");
+      } else {
+        const newEntry = await createEntry(entryData);
+        showNotification("New entry published", "success");
+        setHasChanges(false);
+        navigate(`/journal/${newEntry.id}`, { replace: true });
+        return;
+      }
+      setHasChanges(false);
+      navigate(`/journal/${id}`);
+    } catch (err) {
+      showNotification("Failed to save entry", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteEntry(id);
+      showNotification("Entry deleted", "success");
+      setHasChanges(false);
+      navigate("/dashboard");
+    } catch (err) {
+      showNotification("Failed to delete entry", "error");
+    }
   };
 
   return (
-    <div className="relative bg-[#FBF9F6]">
+    <div className="relative bg-[#FBF9F6] min-h-full">
       {/* ── Floating toolbar ── */}
       {toolbar.visible && (
         <div
@@ -148,32 +255,52 @@ export default function CreateJournal() {
 
       {/* ── Nav ── */}
       <nav
-        className={`flex justify-between items-center px-4 md:px-10 py-5 border-b border-[#F2EFE9] transition-opacity duration-300 bg-[#FBF9F6] sticky top-0 lg:top-0 z-40 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`flex justify-between items-center px-4 md:px-10 py-5 border-b border-[#F2EFE9] transition-opacity duration-300 bg-[#FBF9F6] sticky top-0 z-40 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard")}
-            className="lg:hidden font-sans text-[14px] text-[#8A867D] hover:text-[#1C1917] transition-colors bg-transparent border-none cursor-pointer"
+            onClick={() => {
+              if (hasChanges && !window.confirm("Disregard unsaved changes?"))
+                return;
+              navigate(-1);
+            }}
+            className="font-sans text-[14px] text-[#8A867D] hover:text-[#1C1917] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-2"
           >
-            ←
+            <span className="text-lg">←</span>
+            <span className="hidden md:inline">Back</span>
           </button>
-          <span
-            className={`font-sans text-[12px] transition-all ${saved ? "text-[#C29F60]" : "text-transparent"}`}
-          >
-            Saved to Cloud
-          </span>
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${saving ? "bg-[#C29F60] animate-pulse" : lastSaved ? "bg-green-500" : "bg-transparent"}`}
+            />
+            <span className="font-sans text-[11px] text-[#8A867D] uppercase tracking-[1px]">
+              {saving
+                ? "Saving..."
+                : lastSaved
+                  ? `Saved ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : ""}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
           <span className="hidden sm:inline font-sans text-[13px] text-[#8A867D]">
             {wordCount} {wordCount === 1 ? "word" : "words"}
           </span>
+          {isEditMode && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="font-sans text-[13px] text-red-600 hover:text-red-800 transition-colors bg-transparent border-none cursor-pointer"
+            >
+              Delete
+            </button>
+          )}
           <Button
             onClick={publish}
             disabled={saving}
             size="md"
-            className="text-[13px] md:text-[14px] px-4"
+            className="text-[13px] md:text-[14px] px-6"
           >
-            {saving ? "Publishing…" : "Publish"}
+            {saving ? "Saving…" : isEditMode ? "Update" : "Publish"}
           </Button>
         </div>
       </nav>
@@ -181,22 +308,22 @@ export default function CreateJournal() {
       {/* ── Writing canvas ── */}
       <div className="max-w-[720px] mx-auto px-6 py-10 md:py-16">
         {/* Mood selector */}
-        <div className="mb-8">
-          <p className="font-sans text-[11px] uppercase tracking-[2px] text-[#8A867D] mb-3">
-            How are you feeling?
+        <div className="mb-12">
+          <p className="font-sans text-[11px] uppercase tracking-[3px] text-[#C29F60] mb-4">
+            Current Mood
           </p>
           <div className="flex flex-wrap gap-2">
             {MOODS.map((m) => (
               <button
                 key={m.label}
-                onClick={() => setMood(mood === m.label ? "" : m.label)}
-                className={`font-sans text-[12px] uppercase tracking-[1px] px-3 py-1.5 border transition-all duration-150 cursor-pointer ${
+                onClick={() => handleMoodChange(m.label)}
+                className={`font-sans text-[12px] uppercase tracking-[1px] px-4 py-2 border transition-all duration-200 cursor-pointer ${
                   mood === m.label
-                    ? "bg-[#1A3626] text-[#FBF9F6] border-[#1A3626]"
-                    : "bg-transparent text-[#8A867D] border-[#8A867D] hover:border-[#1C1917] hover:text-[#1C1917]"
+                    ? "bg-[#1A3626] text-[#FBF9F6] border-[#1A3626] shadow-md"
+                    : "bg-transparent text-[#8A867D] border-[#E5E2DC] hover:border-[#1C1917] hover:text-[#1C1917]"
                 }`}
               >
-                <span className="mr-1.5">{m.emoji}</span>
+                <span className="mr-2">{m.emoji}</span>
                 {m.label}
               </button>
             ))}
@@ -207,8 +334,8 @@ export default function CreateJournal() {
         <textarea
           ref={titleRef}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title…"
+          onChange={handleTitleChange}
+          placeholder="Give this moment a name..."
           rows={1}
           className="w-full bg-transparent border-none outline-none resize-none overflow-hidden text-[#1C1917] placeholder-[#C8C5BF] mb-2"
           style={{
@@ -255,7 +382,7 @@ export default function CreateJournal() {
             {tags.map((t) => (
               <Tag
                 key={t}
-                onRemove={() => setTags((prev) => prev.filter((x) => x !== t))}
+                onRemove={() => handleTagsChange(tags.filter((x) => x !== t))}
               >
                 #{t}
               </Tag>
@@ -287,6 +414,31 @@ export default function CreateJournal() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Entry"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Delete Entry
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[15px] text-[#8A867D] leading-relaxed">
+          Are you sure you want to delete this entry? This action cannot be
+          undone.
+        </p>
+      </Modal>
     </div>
   );
 }

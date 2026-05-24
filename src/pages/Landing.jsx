@@ -18,23 +18,23 @@ const FEATURES = [
   },
   {
     num: "03",
-    title: "AI Reflection Tools",
-    body: "Summarise, reframe, or expand entries with built-in AI assistance that respects your voice.",
-  },
-  {
-    num: "04",
-    title: "Analytics & Streaks",
+    title: "Analytics & Insights",
     body: "Visualise your consistency, mood history, and writing volume across weeks and months.",
   },
   {
+    num: "04",
+    title: "Calendar View",
+    body: "Navigate your archive by date. Every day you wrote is a door worth opening again.",
+  },
+  {
     num: "05",
-    title: "Private by Design",
-    body: "End-to-end encrypted. Export to PDF or Markdown at any time. Your words belong to you.",
+    title: "Secure Cloud Sync",
+    body: "Keep your journal safe and accessible across all your devices with Google-powered sync.",
   },
   {
     num: "06",
-    title: "Calendar View",
-    body: "Navigate your archive by date. Every day you wrote is a door worth opening again.",
+    title: "Local-First Storage",
+    body: "Your words are stored on your device first. Fast, reliable, and available even when you're offline.",
   },
 ];
 
@@ -107,7 +107,7 @@ export default function Landing() {
                   Sign In
                 </Button>
               </Link>
-              <Link to="/signup">
+              <Link to="/journal/new">
                 <Button size="sm">Start Writing</Button>
               </Link>
             </>
@@ -150,7 +150,10 @@ export default function Landing() {
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                <Link
+                  to="/journal/new"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   <Button className="w-full">Start Writing</Button>
                 </Link>
               </div>
@@ -178,14 +181,9 @@ export default function Landing() {
             calm aesthetics, and tools that deepen self-understanding over time.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Link to="/signup" className="w-full sm:w-auto">
+            <Link to="/journal/new" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 Begin Your Journal — Free
-              </Button>
-            </Link>
-            <Link to="/dashboard" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                See the Demo
               </Button>
             </Link>
           </div>
@@ -299,9 +297,9 @@ export default function Landing() {
           Begin today.
           <em className="font-normal italic block">Your words are waiting.</em>
         </p>
-        <Link to="/signup">
+        <Link to="/journal/new">
           <Button size="lg" className="w-full sm:w-auto">
-            Create Your Free Journal
+            Start Writing for Free
           </Button>
         </Link>
         <p className="text-[13px] text-[#8A867D] mt-5">

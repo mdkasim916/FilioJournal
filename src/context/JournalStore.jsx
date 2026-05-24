@@ -217,13 +217,19 @@ export function JournalProvider({ children }) {
 
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setAuthSession(data.session ?? null);
-        setSyncStatus(data.session ? "signed-in" : "signed-out");
-        setIsAuthLoading(false);
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) {
+          setAuthSession(data.session ?? null);
+          setSyncStatus(data.session ? "signed-in" : "signed-out");
+          setIsAuthLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Auth error:", err);
+        if (active) setIsAuthLoading(false);
+      });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthSession(session ?? null);
@@ -296,38 +302,64 @@ export function JournalProvider({ children }) {
     return nextEntry;
   }
 
-  function updateEntry(entryId, updates) {
-    setEntries((currentEntries) =>
-      currentEntries.map((entry) =>
-        entry.id === entryId
-          ? normalizeEntry({
-              ...entry,
-              ...updates,
-              updatedAt: new Date().toISOString(),
-            })
-          : entry,
-      ),
+  async function updateEntry(entryId, updates) {
+    const nextEntries = entries.map((entry) =>
+      entry.id === entryId
+        ? normalizeEntry({
+            ...entry,
+            ...updates,
+            updatedAt: new Date().toISOString(),
+          })
+        : entry,
     );
+    setEntries(nextEntries);
+
+    if (syncEnabled && authSession && hasJournalSync()) {
+      try {
+        await pushRemoteEntries(authSession.user.id, nextEntries);
+        setSyncStatus("synced");
+      } catch (error) {
+        setSyncStatus("error");
+        setSyncError(error instanceof Error ? error.message : "Sync failed.");
+      }
+    }
   }
 
-  function deleteEntry(entryId) {
-    setEntries((currentEntries) =>
-      currentEntries.filter((entry) => entry.id !== entryId),
-    );
+  async function deleteEntry(entryId) {
+    const nextEntries = entries.filter((entry) => entry.id !== entryId);
+    setEntries(nextEntries);
+
+    if (syncEnabled && authSession && hasJournalSync()) {
+      try {
+        await pushRemoteEntries(authSession.user.id, nextEntries);
+        setSyncStatus("synced");
+      } catch (error) {
+        setSyncStatus("error");
+        setSyncError(error instanceof Error ? error.message : "Sync failed.");
+      }
+    }
   }
 
-  function togglePin(entryId) {
-    setEntries((currentEntries) =>
-      currentEntries.map((entry) =>
-        entry.id === entryId
-          ? {
-              ...entry,
-              pinned: !entry.pinned,
-              updatedAt: new Date().toISOString(),
-            }
-          : entry,
-      ),
+  async function togglePin(entryId) {
+    const nextEntries = entries.map((entry) =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            pinned: !entry.pinned,
+            updatedAt: new Date().toISOString(),
+          }
+        : entry,
     );
+    setEntries(nextEntries);
+
+    if (syncEnabled && authSession && hasJournalSync()) {
+      try {
+        await pushRemoteEntries(authSession.user.id, nextEntries);
+        setSyncStatus("synced");
+      } catch (error) {
+        setSyncStatus("error");
+      }
+    }
   }
 
   function importEntries(rawValue) {

@@ -13,13 +13,21 @@ import {
 } from "lucide-react";
 import { useJournal } from "../../context/JournalStore";
 import { NAV_LINKS } from "../../lib/constants";
+import { Button } from "../ui";
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const { logOut, authUser, syncStatus, syncNow, isSyncing, syncEnabled } =
-    useJournal();
+  const {
+    logOut,
+    authUser,
+    syncStatus,
+    syncNow,
+    isSyncing,
+    syncEnabled,
+    isAuthLoading,
+  } = useJournal();
 
   const handleLogout = async () => {
     await logOut();
@@ -147,27 +155,52 @@ export default function Sidebar() {
 
         <div className="p-4 border-t border-[#1C1917]">
           <div className="px-4 py-3 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#1A3626] flex items-center justify-center text-[#FBF9F6] text-[12px] font-bold uppercase">
-                {authUser?.email?.charAt(0) || "U"}
+            {isAuthLoading ? (
+              <div className="flex items-center gap-3 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-[#E5E2DC]" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-[#E5E2DC] w-3/4" />
+                  <div className="h-2 bg-[#E5E2DC] w-1/2" />
+                </div>
               </div>
-              <div className="overflow-hidden">
-                <p className="text-[13px] font-medium text-[#1C1917] truncate">
-                  {authUser?.email?.split("@")[0] || "User"}
-                </p>
-                <p className="text-[11px] text-[#8A867D] truncate">
-                  {authUser?.email || ""}
-                </p>
-              </div>
-            </div>
+            ) : authUser ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1A3626] flex items-center justify-center text-[#FBF9F6] text-[12px] font-bold uppercase">
+                    {authUser?.email?.charAt(0) || "U"}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-[13px] font-medium text-[#1C1917] truncate">
+                      {authUser?.email?.split("@")[0] || "User"}
+                    </p>
+                    <p className="text-[11px] text-[#8A867D] truncate">
+                      {authUser?.email || ""}
+                    </p>
+                  </div>
+                </div>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-2 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left border-none bg-transparent"
-            >
-              <LogOut size={16} />
-              Sign Out
-            </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full px-2 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left border-none bg-transparent"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-[11px] text-[#8A867D] leading-relaxed">
+                  Your journal is currently{" "}
+                  <span className="font-bold text-[#1A3626]">Local Only</span>.
+                  Sign in to enable cloud sync.
+                </p>
+                <Link to="/login">
+                  <Button size="sm" className="w-full">
+                    Sign In to Sync
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </aside>
